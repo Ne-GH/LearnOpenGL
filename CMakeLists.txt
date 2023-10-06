@@ -3,8 +3,15 @@ project(LearnOpenGL)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(LearnOpenGL main.cpp glad.c)
-include_directories(header)
+add_executable(LearnOpenGL main.cpp
+        library/glad.c
+        library/stb_image.h
+        library/stb_image.cpp
+
+        Shader.h
+        Shader.cpp
+)
+include_directories(library)
 #find_package(glfw3 glad REQUIRED )
 #target_link_libraries(LearnOpenGL GL glfw)
 
