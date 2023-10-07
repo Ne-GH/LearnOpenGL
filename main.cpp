@@ -8,6 +8,10 @@
 
 #include "stb_image.h"
 #include "Shader.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -50,14 +54,20 @@ int main() {
 
     // 标准化设备坐标，屏幕中心为原点
     // 上为y轴正方向, 右为x轴正方
+//    float vertices[] = {
+//            // positions          // colors           // texture coords
+//            0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+//            0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+//            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+//            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
+//    };
     float vertices[] = {
-            // positions          // colors           // texture coords
-            0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-            0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
+            // positions          // texture coords
+            0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
+            0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
+            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
+            -0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left
     };
-
     unsigned int indices[] = {
             0 ,1 ,3,
             1 ,2 ,3
@@ -78,16 +88,16 @@ int main() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
 
     // 位置属性
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float ),(void*)0);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,5*sizeof(float ),(void*)0);
     glEnableVertexAttribArray(0);
 
     // 颜色属性
-    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,8*sizeof(float ),(void*)(3*sizeof(float )));
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,5*sizeof(float ),(void*)(3*sizeof(float )));
     glEnableVertexAttribArray(1);
 
     // 贴图
-    glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float ),(void*)(6*sizeof(float )));
-    glEnableVertexAttribArray(2);
+//    glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float ),(void*)(6*sizeof(float )));
+//    glEnableVertexAttribArray(2);
 
     // 加载并创建质地（贴图）
     unsigned int texture;
@@ -129,6 +139,33 @@ int main() {
     }
     stbi_image_free(data);
 
+    // texture 2
+    unsigned int texture2;
+    glGenTextures(1,&texture2);
+    glBindTexture(GL_TEXTURE_2D,texture2);
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+
+    // 反转图片
+    // 否则是颠倒的，因为OpenGL要求y轴的0在图片的底部，但是图片y轴的0在顶部
+//    stbi_set_flip_vertically_on_load(true);
+    data = stbi_load("./resources/awesomeface.png",&width,&height,&nrChannels,0);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+        std::cerr << "failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    ourShader.use();// 在设置uniform变量之前激活着色器
+    glUniform1i(glGetUniformLocation(ourShader.ID,"texture1"),0); // 手动设置
+    ourShader.SetInt("texture2",1); // 或者使用着色器类设置
 
 
     // 视口
@@ -146,14 +183,21 @@ int main() {
         glClearColor(0.2f, 0.3f, 1.2f, 1.0f);// 设置清空缓冲（屏幕）所用的颜色
         glClear(GL_COLOR_BUFFER_BIT);// 清空颜色缓冲
 
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,texture);
 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D,texture2);
 
 
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::translate(transform,glm::vec3(0.5f,-0.5f,0.0f));
+        transform = glm::rotate(transform,(float)glfwGetTime(),glm::vec3(0.0f,0.0f,1.0f));
 
-
-//        glUseProgram(shaderProgram);
         ourShader.use();
+        unsigned int transformLoc = glGetUniformLocation(ourShader.ID,"transform");
+        glUniformMatrix4fv(transformLoc,1,GL_FALSE,glm::value_ptr((transform)));
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
 
