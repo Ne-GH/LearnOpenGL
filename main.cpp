@@ -192,6 +192,7 @@ int main() {
 
         glm::mat4 transform = glm::mat4(1.0f);
         transform = glm::translate(transform,glm::vec3(0.5f,-0.5f,0.0f));
+        // 参数：矩阵，旋转弧度，沿(0,0,1)轴（z轴）旋转
         transform = glm::rotate(transform,(float)glfwGetTime(),glm::vec3(0.0f,0.0f,1.0f));
 
         ourShader.use();
