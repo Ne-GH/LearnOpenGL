@@ -211,6 +211,8 @@ int main() {
     // 注册事件，窗口大小调整的时候调用这个函数
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    // 开启深度测试
+    glEnable(GL_DEPTH_TEST);
     // 窗口是否要求退出
     while (!glfwWindowShouldClose(window)) {
 
@@ -218,7 +220,7 @@ int main() {
         processInput(window);
 
         glClearColor(0.2f, 0.3f, 1.2f, 1.0f);// 设置清空缓冲（屏幕）所用的颜色
-        glClear(GL_COLOR_BUFFER_BIT);// 清空颜色缓冲
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// 清空颜色缓冲并在每次渲染迭代之前清除深度缓冲（否则前一帧的深度信息仍然保存在缓冲中）
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,texture);
