@@ -11,7 +11,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -62,15 +63,51 @@ int main() {
 //            -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
 //    };
     float vertices[] = {
-            // positions          // texture coords
-            0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
-            0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
-            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
-            -0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
     unsigned int indices[] = {
-            0 ,1 ,3,
-            1 ,2 ,3
+//            0 ,1 ,3,
+//            1 ,2 ,3
     };
 
     // 定点缓冲对象,（其值是定点缓冲对象独一无二的ID）
@@ -152,7 +189,7 @@ int main() {
 
     // 反转图片
     // 否则是颠倒的，因为OpenGL要求y轴的0在图片的底部，但是图片y轴的0在顶部
-//    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
     data = stbi_load("./resources/awesomeface.png",&width,&height,&nrChannels,0);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
@@ -189,15 +226,26 @@ int main() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D,texture2);
 
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        // radians将角度转化为弧度
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        view = glm::translate(view,glm::vec3(0.0f,0.0f,-3.0f));
+        // 投影矩阵
+        projection = glm::perspective(glm::radians(45.0f),(float)SCR_WIDTH / (float)SCR_HEIGHT,1.0f,100.0f);
 
-        glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::translate(transform,glm::vec3(0.5f,-0.5f,0.0f));
-        // 参数：矩阵，旋转弧度，沿(0,0,1)轴（z轴）旋转
-        transform = glm::rotate(transform,(float)glfwGetTime(),glm::vec3(0.0f,0.0f,1.0f));
+        unsigned int modelLoc = glGetUniformLocation(ourShader.ID,"model");
+        unsigned int viewLoc = glGetUniformLocation(ourShader.ID,"view");
 
-        ourShader.use();
-        unsigned int transformLoc = glGetUniformLocation(ourShader.ID,"transform");
-        glUniformMatrix4fv(transformLoc,1,GL_FALSE,glm::value_ptr((transform)));
+        glUniformMatrix4fv(modelLoc,1,GL_FALSE,glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc,1,GL_FALSE,&view[0][0]);
+
+        ourShader.SetMat4("projection",projection);
+
+
+        glDrawArrays(GL_TRIANGLES,0,36);
+
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
