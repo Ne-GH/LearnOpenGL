@@ -213,6 +213,21 @@ int main() {
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
+
+
+    glm::vec3 cubePositions[] = {
+            glm::vec3( 0.0f,  0.0f,  0.0f),
+            glm::vec3( 2.0f,  5.0f, -15.0f),
+            glm::vec3(-1.5f, -2.2f, -2.5f),
+            glm::vec3(-3.8f, -2.0f, -12.3f),
+            glm::vec3( 2.4f, -0.4f, -3.5f),
+            glm::vec3(-1.7f,  3.0f, -7.5f),
+            glm::vec3( 1.3f, -2.0f, -2.5f),
+            glm::vec3( 1.5f,  2.0f, -2.5f),
+            glm::vec3( 1.5f,  0.2f, -1.5f),
+            glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+
     // 窗口是否要求退出
     while (!glfwWindowShouldClose(window)) {
 
@@ -228,29 +243,35 @@ int main() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D,texture2);
 
-        glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
         // radians将角度转化为弧度
-        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         view = glm::translate(view,glm::vec3(0.0f,0.0f,-3.0f));
         // 投影矩阵
         projection = glm::perspective(glm::radians(45.0f),(float)SCR_WIDTH / (float)SCR_HEIGHT,1.0f,100.0f);
 
-        unsigned int modelLoc = glGetUniformLocation(ourShader.ID,"model");
-        unsigned int viewLoc = glGetUniformLocation(ourShader.ID,"view");
-
-        glUniformMatrix4fv(modelLoc,1,GL_FALSE,glm::value_ptr(model));
-        glUniformMatrix4fv(viewLoc,1,GL_FALSE,&view[0][0]);
-
         ourShader.SetMat4("projection",projection);
+        ourShader.SetMat4("view",view);
 
 
-        glDrawArrays(GL_TRIANGLES,0,36);
+
 
 
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
+//        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
+
+        for (int i = 0;i < 10; ++i) {
+
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+            float angle = 20.0f;
+            model = glm::rotate(model,glm::radians(angle),glm::vec3(1.0f,0.3f,0.5f));
+            ourShader.SetMat4("model",model);
+
+            glDrawArrays(GL_TRIANGLES,0,36);
+        }
+
 
         // 触发事件
         glfwPollEvents();
