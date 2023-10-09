@@ -228,6 +228,16 @@ int main() {
             glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    // 投影矩阵
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f),(float)SCR_WIDTH / (float)SCR_HEIGHT,1.0f,100.0f);
+    ourShader.SetMat4("projection",projection);
+
+    // 摄像机
+    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,3.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f,0.0f,-1.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f,1.0f,0.0f);
+
+
     // 窗口是否要求退出
     while (!glfwWindowShouldClose(window)) {
 
@@ -243,29 +253,32 @@ int main() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D,texture2);
 
+        ourShader.use();
         glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::mat4(1.0f);
-        // radians将角度转化为弧度
-        view = glm::translate(view,glm::vec3(0.0f,0.0f,-3.0f));
-        // 投影矩阵
-        projection = glm::perspective(glm::radians(45.0f),(float)SCR_WIDTH / (float)SCR_HEIGHT,1.0f,100.0f);
-
-        ourShader.SetMat4("projection",projection);
+        view = glm::lookAt(cameraPos,cameraPos + cameraFront,cameraUp);
         ourShader.SetMat4("view",view);
 
+        float cameraSpeed = 0.05f;
+        if (glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) {
+            cameraPos += cameraSpeed * cameraFront;
+        }
+        if (glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) {
+            cameraPos -= cameraSpeed * cameraFront;
+        }
+        if (glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) {
+            cameraPos -= glm::normalize(glm::cross(cameraFront,cameraUp) * cameraSpeed);
+        }
+        if (glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) {
+            cameraPos += glm::normalize(glm::cross(cameraFront,cameraUp) * cameraSpeed);
+        }
 
-
-
-
-        glBindVertexArray(VAO);
-//        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
 
         for (int i = 0;i < 10; ++i) {
 
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
             model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-            float angle = 20.0f;
+            float angle = 20.0f * i;
             model = glm::rotate(model,glm::radians(angle),glm::vec3(1.0f,0.3f,0.5f));
             ourShader.SetMat4("model",model);
 
