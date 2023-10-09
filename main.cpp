@@ -14,15 +14,86 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+// 摄像机
+glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f,0.0f,-1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f,1.0f,0.0f);
+
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow *window)
-{
+void processInput(GLFWwindow *window) {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // deltaTime是时间间隔
+    float cameraSpeed = static_cast<float>(2.5*deltaTime);
+    if (glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) {
+        cameraPos += cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) {
+        cameraPos -= cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) {
+        cameraPos -= glm::normalize(glm::cross(cameraFront,cameraUp)) * cameraSpeed;
+    }
+    if (glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) {
+        cameraPos += glm::normalize(glm::cross(cameraFront,cameraUp)) * cameraSpeed;
+    }
+}
+
+bool firstMouse = true;
+float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch =  0.0f;
+float lastX =  800.0f / 2.0;
+float lastY =  600.0 / 2.0;
+float fov   =  45.0f;
+
+void MouseCallBack(GLFWwindow *window,double xpos,double ypos) {
+    if(firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.05;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw   += xoffset;
+    pitch += yoffset;
+
+    if(pitch > 89.0f)
+        pitch = 89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+}
+
+void ScrollCallBack(GLFWwindow *window,double xoffset,double yoffset) {
+    if(fov >= 1.0f && fov <= 45.0f)
+        fov -= yoffset;
+    if(fov <= 1.0f)
+        fov = 1.0f;
+    if(fov >= 45.0f)
+        fov = 45.0f;
 }
 
 int main() {
@@ -228,18 +299,23 @@ int main() {
             glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
-    // 投影矩阵
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f),(float)SCR_WIDTH / (float)SCR_HEIGHT,1.0f,100.0f);
-    ourShader.SetMat4("projection",projection);
 
-    // 摄像机
-    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,3.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f,0.0f,-1.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f,1.0f,0.0f);
+
+    // 它应该隐藏光标，并捕捉(Capture)它
+    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+    // 注册鼠标事件
+    glfwSetCursorPosCallback(window,MouseCallBack);
+    // 注册鼠标滚轮事件
+    glfwSetScrollCallback(window,ScrollCallBack);
+
+
 
 
     // 窗口是否要求退出
     while (!glfwWindowShouldClose(window)) {
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
         // 输入
         processInput(window);
@@ -257,21 +333,9 @@ int main() {
         glm::mat4 view = glm::mat4(1.0f);
         view = glm::lookAt(cameraPos,cameraPos + cameraFront,cameraUp);
         ourShader.SetMat4("view",view);
-
-        float cameraSpeed = 0.05f;
-        if (glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) {
-            cameraPos += cameraSpeed * cameraFront;
-        }
-        if (glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) {
-            cameraPos -= cameraSpeed * cameraFront;
-        }
-        if (glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) {
-            cameraPos -= glm::normalize(glm::cross(cameraFront,cameraUp) * cameraSpeed);
-        }
-        if (glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) {
-            cameraPos += glm::normalize(glm::cross(cameraFront,cameraUp) * cameraSpeed);
-        }
-
+        // 投影矩阵
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        ourShader.SetMat4("projection", projection);
 
         for (int i = 0;i < 10; ++i) {
 
